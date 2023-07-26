@@ -5,7 +5,10 @@ x-airflow-common:
   # In order to add custom dependencies or upgrade provider packages you can use your extended image.
   # Comment the image line, place your Dockerfile in the directory where you placed the docker-compose.yaml
   # and uncomment the "build" line below, Then run `docker-compose build` to build the images.
-  image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.6.3}
+  build:
+    context: airflow-spark
+    dockerfile: Dockerfile
+  image: airflow-spark # ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.6.3}
   # build: .
   environment:
     &airflow-common-env
@@ -28,10 +31,13 @@ x-airflow-common:
     # for other purpose (development, test and especially production usage) build/extend Airflow image.
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
   volumes:
-    - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
-    - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
-    - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
-    - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
+    - ${AIRFLOW_PROJ_DIR:-..}/dags:/opt/airflow/dags
+    - ${AIRFLOW_PROJ_DIR:-..}/logs:/opt/airflow/logs
+    - ${AIRFLOW_PROJ_DIR:-..}/config:/opt/airflow/config
+    - ${AIRFLOW_PROJ_DIR:-..}/plugins:/opt/airflow/plugins
+    # for Spark
+    - ../spark/app:/opt/spark/app #Spark Scripts (Must be the same path in airflow and Spark Cluster)
+    - ../spark/resources:/opt/spark/resources #Resources folder (Must be the same path in airflow and Spark Cluster)
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
@@ -53,23 +59,87 @@ services:
       CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
       CLICKHOUSE_PASSWORD: ${ENV_CLICKHOUSE_PASSWORD}
     volumes:
-      - ./clickhouse/data:/var/lib/clickhouse/
-      - ./clickhouse/logs:/var/lib/clickhouse-server/
-      # - ./clickhouse/db:/docker-entrypoint-initdb.d/
+      - ../clickhouse/data:/var/lib/clickhouse/
+      - ../clickhouse/logs:/var/lib/clickhouse-server/
+      # - ../clickhouse/db:/docker-entrypoint-initdb.d/
 
   jupyter_pyspark:
     build:
       context: jupyter
       dockerfile: Dockerfile
     container_name: jupyter_pyspark
-    image: altenar/jupyter_pyspark:${ENV}
+    image: jupyter_pyspark:${ENV}
     ports:
       - 8888:8888
+      - "4040-4080:4040-4080"
     environment:
       JUPYTER_ENABLE_LAB: "yes"
       JUPYTER_TOKEN: "${ENV_TOKEN}"
     volumes:
-      - ./notebooks:/notebooks
+      - ../notebooks:/home/jovyan/work/notebooks
+      - ../spark/resources/data:/home/jovyan/work/data/
+      - ../spark/resources/jars:/home/jovyan/work/jars/
+
+  # Spark with 3 workers
+  spark:
+    image: bitnami/spark:3.4
+    user: root # Run container as root container: https://docs.bitnami.com/tutorials/work-with-non-root-containers/
+    hostname: spark
+    # networks:
+    #     - default_net
+    environment:
+        - SPARK_MODE=master
+        - SPARK_RPC_AUTHENTICATION_ENABLED=no
+        - SPARK_RPC_ENCRYPTION_ENABLED=no
+        - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+        - SPARK_SSL_ENABLED=no
+        - PYSPARK_PYTHON=/usr/local/lib/python3.6 # Path to Python inside the Airflow container
+        - PYSPARK_DRIVER_PYTHON=/usr/local/lib/python3.6 # Path to Python inside the Airflow container
+    volumes:
+        - ../spark/app:/opt/spark/app # Spark scripts folder (Must be the same path in airflow and Spark Cluster)
+        - ../spark/resources:/opt/spark/resources #Resources folder (Must be the same path in airflow and Spark Cluster)
+    ports:
+        - "8181:8080"
+        - "7077:7077"
+
+  spark-worker-1:
+    image: bitnami/spark:3.4
+    user: root
+    # networks:
+    #     - default_net
+    environment:
+        - SPARK_MODE=worker
+        - SPARK_MASTER_URL=spark://spark:7077
+        - SPARK_WORKER_MEMORY=1G
+        - SPARK_WORKER_CORES=1
+        - SPARK_RPC_AUTHENTICATION_ENABLED=no
+        - SPARK_RPC_ENCRYPTION_ENABLED=no
+        - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+        - SPARK_SSL_ENABLED=no
+        - PYSPARK_PYTHON=/usr/local/lib/python3.6 # Path to Python inside the Airflow container
+        - PYSPARK_DRIVER_PYTHON=/usr/local/lib/python3.6 # Path to Python inside the Airflow container
+    volumes:
+        - ../spark/app:/opt/spark/app # Spark scripts folder (Must be the same path in airflow and Spark Cluster)
+        - ../spark/resources:/opt/spark/resources #Resources folder (Must be the same path in airflow and Spark Cluster)
+
+  ## Had to skip this one, because of space limiatations on my host..
+  # spark-worker-2:
+  #   image: bitnami/spark:3.4
+  #   user: root
+  #   # networks:
+  #   #     - default_net
+  #   environment:
+  #       - SPARK_MODE=worker
+  #       - SPARK_MASTER_URL=spark://spark:7077
+  #       - SPARK_WORKER_MEMORY=1G
+  #       - SPARK_WORKER_CORES=1
+  #       - SPARK_RPC_AUTHENTICATION_ENABLED=no
+  #       - SPARK_RPC_ENCRYPTION_ENABLED=no
+  #       - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+  #       - SPARK_SSL_ENABLED=no
+  #   volumes:
+  #       - ../spark/app:/opt/spark/app # Spark scripts folder (Must be the same path in airflow and Spark Cluster)
+  #       - ../spark/resources:/opt/spark/resources #Resources folder (Must be the same path in airflow and Spark Cluster)
   
   postgres:
     image: postgres:13
@@ -175,7 +245,7 @@ services:
       - -c
       - |
         function ver() {
-          printf "%04d%04d%04d%04d" $${1//./ }
+          printf "%04d%04d%04d%04d" $${1//../ }
         }
         airflow_version=$$(AIRFLOW__LOGGING__LOGGING_LEVEL=INFO && gosu airflow airflow version)
         airflow_version_comparable=$$(ver $${airflow_version})
@@ -243,7 +313,7 @@ services:
       _PIP_ADDITIONAL_REQUIREMENTS: ''
     user: "0:0"
     volumes:
-      - ${AIRFLOW_PROJ_DIR:-.}:/sources
+      - ${AIRFLOW_PROJ_DIR:-../}:/sources
 
   airflow-cli:
     <<: *airflow-common

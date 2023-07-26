@@ -11,4 +11,4 @@ RUN pip install -r requirements.txt
 EXPOSE 8888
 
 # Set the working directory
-WORKDIR /notebooks
+# WORKDIR /notebooks
