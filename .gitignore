@@ -1,1 +1,12 @@
+.env
+__pycache__
+
+.ipynb_checkpoints
+spark-warehouse
+
+clickhouse/
+clickhouse_data/
+pg_data/
+logs/
+
 Excercise.pdf
