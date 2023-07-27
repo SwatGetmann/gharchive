@@ -9,4 +9,6 @@ clickhouse_data/
 pg_data/
 logs/
 
+*.json.gz
+
 Excercise.pdf
