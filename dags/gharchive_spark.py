@@ -46,11 +46,15 @@ with DAG(
 ) as dag:
 
     spark_job = SparkSubmitOperator(
-        task_id="spark_test_job",
+        task_id="spark_date_job",
         application="/opt/spark/app/gharchive_v1.py", # Spark application path created in airflow and spark cluster
         name=spark_app_name,
         conn_id="spark_default",
         verbose=1,
-        conf={"spark.master":spark_master},
+        conf={
+            "spark.master": spark_master,
+        },
         application_args=['{{ dag_run.conf.get("date") }}']
     )
+
+
