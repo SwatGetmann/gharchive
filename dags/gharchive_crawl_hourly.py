@@ -70,15 +70,11 @@ default_args = {
 }
 
 dag = DAG(
-    dag_id="gharchive_processor_v1",
+    dag_id="gharchive_hourly",
     description="""
     Processor for GitHubArchive.
-    - Crawls the archive for curernt day, past hour
+    - Crawls the archive for logical_date, past hour
     - Stores the file in shared Spark resource folder
-    - Passes the file to Spark for aggregations
-    - Runs Spark job with the crawled file
-    - Saves the result from Spark into Clcikhouse
-    - Removes the file after completion
     """,
     default_args=default_args, 
     # schedule_interval=timedelta(hours=1),

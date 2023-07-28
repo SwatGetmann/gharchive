@@ -1,9 +1,7 @@
 from airflow import DAG
 from airflow.contrib.operators.spark_submit_operator import SparkSubmitOperator
 # from airflow.operators.trigger_dagrun import TriggerDagRunOperator
-
-from airflow.decorators import task
-from airflow.models.param import Param
+# from airflow.decorators import task
 
 from datetime import datetime, timedelta
 import requests
@@ -55,14 +53,3 @@ with DAG(
         conf={"spark.master":spark_master},
         application_args=['{{ dag_run.conf.get("date") }}']
     )
-
-    # spark_job = SparkSubmitOperator.partial(
-    #     task_id="spark_test_job",
-    #     application="/opt/spark/app/gharchive_v1.py", # Spark application path created in airflow and spark cluster
-    #     name=spark_app_name,
-    #     conn_id="spark_default",
-    #     verbose=1,
-    #     conf={"spark.master":spark_master},
-    # ).expand(
-    #     application_args=['{{ dag_run.conf.get("date") }}']
-    # )
