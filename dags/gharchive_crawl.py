@@ -1,5 +1,6 @@
 from airflow import DAG
-from airflow.contrib.operators.spark_submit_operator import SparkSubmitOperator
+# from airflow.contrib.operators.spark_submit_operator import SparkSubmitOperator
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 
 from airflow.decorators import task
 from airflow.models.param import Param
@@ -24,20 +25,21 @@ default_args = {
 }
 
 with DAG(
-    dag_id="gharchive_processor_daily",
+    dag_id="gharchive_01_crawl_daily",
     description="""
     Processor for GitHubArchive.
     - Crawls the archive for the past day (and even catches up), or for selected day
     - Stores the file in shared Spark resource folder
-    - Passes the file paths to Spark for aggregations
-    - Runs Spark job with the crawled file
-    - Saves the result from Spark into Clcikhouse
-    - Removes the file after completion
+    # - Passes the file paths to Spark for aggregations
+    # - Runs Spark job with the crawled file
+    # - Saves the result from Spark into Clcikhouse
+    # - Removes the file after completion
     """,
     default_args=default_args, 
     # schedule_interval=timedelta(hours=1),
     schedule="@daily",
-    catchup=True,
+    # catchup=True,
+    catchup=False,
     concurrency=4,
     max_active_runs=1,
     params={
@@ -52,7 +54,7 @@ with DAG(
 ) as dag:
 
     @task
-    def generate_dts(**kwargs):
+    def get_date(**kwargs):
         dag_run = kwargs['dag_run']
         if 'start_date' not in dag_run.conf:
             print("Start date had not been given!")
@@ -65,7 +67,11 @@ with DAG(
         prev_dt = date - timedelta(days=1)
         prev_dt = prev_dt.replace(hour=0, minute=0, second=0, microsecond=0)
         print("PREVIOUS DAY DT: {}".format(prev_dt))
-        dts = [prev_dt.replace(hour=i) for i in range(0, 24)]
+        return prev_dt
+
+    @task
+    def generate_dts(date, **kwargs):
+        dts = [date.replace(hour=i) for i in range(0, 24)]
         return dts
 
     @task
@@ -94,6 +100,30 @@ with DAG(
                 f.write(resp.content)
         return save_path
 
-    dts = generate_dts()
+    @task
+    def dummy_merger(date, crawled_paths, **kwargs):
+        return date.strftime("%F")
+
+    date = get_date()
+    dts = generate_dts(date=date)
     paths = gharchive_path.expand(dt=dts)
     crawled_paths = crawl_gharchive.expand(path=paths)
+
+    # date_str = dummy_merger(date, crawled_paths)
+
+    trigger = TriggerDagRunOperator(
+        task_id="test_trigger_dagrun",
+        trigger_dag_id="gharchive_02_spark",  # Ensure this equals the dag_id of the DAG to trigger
+        conf={"date": dummy_merger(date, crawled_paths)},
+    )
+
+    # spark_job = SparkSubmitOperator.partial(
+    #     task_id="spark_test_job",
+    #     application="/opt/spark/app/gharchive_v1.py", # Spark application path created in airflow and spark cluster
+    #     name=spark_app_name,
+    #     conn_id="spark_default",
+    #     verbose=1,
+    #     conf={"spark.master":spark_master},
+    # ).expand(
+    #     application_args=[crawled_paths]
+    # )
