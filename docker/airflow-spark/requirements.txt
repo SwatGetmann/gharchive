@@ -1,3 +1,5 @@
 pyspark
 apache-airflow-providers-apache-spark
 clickhouse-connect==0.5.23
+plotly
+dash
