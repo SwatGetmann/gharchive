@@ -54,7 +54,8 @@ with DAG(
         conf={
             "spark.master": spark_master,
         },
-        application_args=['{{ dag_run.conf.get("date") }}']
+        application_args=['{{ dag_run.conf.get("date") }}'],
+        jars="/opt/spark/resources/jars/clickhouse-jdbc-0.4.6-all.jar,/opt/spark/resources/jars/clickhouse-native-jdbc-shaded-2.5.4.jar,/opt/spark/resources/jars/clickhouse-spark-runtime-3.3_2.12-0.7.2.jar"
     )
 
 
