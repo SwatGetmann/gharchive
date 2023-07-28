@@ -38,8 +38,8 @@ with DAG(
     default_args=default_args, 
     # schedule_interval=timedelta(hours=1),
     schedule="@daily",
-    catchup=True,
-    # catchup=False,
+    # catchup=True,
+    catchup=False,
     concurrency=4,
     max_active_runs=1,
     params={
