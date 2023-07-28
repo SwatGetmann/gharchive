@@ -41,7 +41,8 @@ with DAG(
     schedule=None,
     catchup=False,
     concurrency=4,
-    max_active_runs=1
+    max_active_runs=1,
+    tags=['gharchive']
 ) as dag:
 
     spark_job = SparkSubmitOperator(

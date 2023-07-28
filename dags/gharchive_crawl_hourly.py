@@ -77,8 +77,8 @@ dag = DAG(
     - Stores the file in shared Spark resource folder
     """,
     default_args=default_args, 
-    # schedule_interval=timedelta(hours=1),
     schedule="@hourly",
+    tags=['gharchive']
     # catchup=False
 )
 
