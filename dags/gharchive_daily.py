@@ -1,28 +1,11 @@
 from airflow import DAG
-from airflow.operators.python_operator import PythonOperator
-from airflow.operators.dummy_operator import DummyOperator
 from airflow.contrib.operators.spark_submit_operator import SparkSubmitOperator
-from airflow.models import Variable
 
-from airflow.decorators import dag, task
+from airflow.decorators import task
+from airflow.models.param import Param
 
 from datetime import datetime, timedelta
-# import dateutil.parser
-import pendulum
-
 import requests
-
-####
-# TODO:
-# - Crawl __past__ day of gharchive for current day (or past one)
-# - 
-####
-
-now = datetime.now()
-
-#### FUNCTIONALITY
-
-
 
 
 #### DAGs & Tasks
@@ -44,9 +27,9 @@ with DAG(
     dag_id="gharchive_processor_daily",
     description="""
     Processor for GitHubArchive.
-    - Crawls the archive for curernt day, past hour
+    - Crawls the archive for the past day (and even catches up), or for selected day
     - Stores the file in shared Spark resource folder
-    - Passes the file to Spark for aggregations
+    - Passes the file paths to Spark for aggregations
     - Runs Spark job with the crawled file
     - Saves the result from Spark into Clcikhouse
     - Removes the file after completion
@@ -54,16 +37,32 @@ with DAG(
     default_args=default_args, 
     # schedule_interval=timedelta(hours=1),
     schedule="@daily",
-    catchup=False,
+    catchup=True,
     concurrency=4,
-    max_active_runs=1
+    max_active_runs=1,
+    params={
+        "start_date": Param(
+            f"{start_date}",
+            type="string",
+            format="datetime",
+            description="Define the datetime, to process the data for",
+            title="Datetime to proocess"
+        )
+    }
 ) as dag:
 
     @task
     def generate_dts(**kwargs):
-        logical_date = kwargs['logical_date']
-        print("GIVEN DT: {}".format(logical_date))
-        prev_dt = logical_date - timedelta(days=1)
+        dag_run = kwargs['dag_run']
+        if 'start_date' not in dag_run.conf:
+            print("Start date had not been given!")
+            print("Using the logical date and the previous one from today!")
+            date = kwargs['logical_date']    
+        else:
+            date = datetime.strptime(dag_run.conf['start_date'], "%Y-%m-%d")
+        
+        print("GIVEN DT: {}".format(date))
+        prev_dt = date - timedelta(days=1)
         prev_dt = prev_dt.replace(hour=0, minute=0, second=0, microsecond=0)
         print("PREVIOUS DAY DT: {}".format(prev_dt))
         dts = [prev_dt.replace(hour=i) for i in range(0, 24)]
