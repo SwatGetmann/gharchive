@@ -38,8 +38,8 @@ with DAG(
     default_args=default_args, 
     # schedule_interval=timedelta(hours=1),
     schedule="@daily",
-    # catchup=True,
-    catchup=False,
+    catchup=True,
+    # catchup=False,
     concurrency=4,
     max_active_runs=1,
     params={
@@ -50,7 +50,8 @@ with DAG(
             description="Define the datetime, to process the data for",
             title="Datetime to proocess"
         )
-    }
+    },
+    tags=['gharchive']
 ) as dag:
 
     @task
