@@ -1,4 +1,4 @@
-import sys
+import sys, os
 import pathlib
 from pyspark import SparkConf, SparkContext
 from pyspark.sql import SparkSession
@@ -16,10 +16,15 @@ sc = SparkContext()
 spark = SparkSession.builder.config(conf=SparkConf()).getOrCreate()
 
 # Get the second argument passed to spark-submit (the first is the python app)
-file_path = sys.argv[1]
-print(file_path)
+date = sys.argv[1]
+resources_path_obj = pathlib.Path("/opt/spark/resources/data/")
+path_glob_str = "{}-*.json.gz".format(date)
+print("PATH GLOB STR: {}".format(path_glob_str))
 
+paths = [str(path) for path in sorted(resources_path_obj.glob(path_glob_str), key=os.path.getmtime)]
+print(paths)
 
+df = spark.read.json(paths)
+print(df.show(10))
 
-spark.read.json(file_path)
-print(sc.show(10))
+print(df.count())
