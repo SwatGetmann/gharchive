@@ -71,6 +71,7 @@ services:
     image: jupyter_pyspark:${ENV}
     ports:
       - 8888:8888
+      - 8050:8050
       - "4040-4080:4040-4080"
     environment:
       JUPYTER_ENABLE_LAB: "yes"
