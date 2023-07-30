@@ -110,21 +110,8 @@ with DAG(
     paths = gharchive_path.expand(dt=dts)
     crawled_paths = crawl_gharchive.expand(path=paths)
 
-    # date_str = dummy_merger(date, crawled_paths)
-
     trigger = TriggerDagRunOperator(
         task_id="test_trigger_dagrun",
         trigger_dag_id="gharchive_02_spark",  # Ensure this equals the dag_id of the DAG to trigger
         conf={"date": dummy_merger(date, crawled_paths)},
     )
-
-    # spark_job = SparkSubmitOperator.partial(
-    #     task_id="spark_test_job",
-    #     application="/opt/spark/app/gharchive_v1.py", # Spark application path created in airflow and spark cluster
-    #     name=spark_app_name,
-    #     conn_id="spark_default",
-    #     verbose=1,
-    #     conf={"spark.master":spark_master},
-    # ).expand(
-    #     application_args=[crawled_paths]
-    # )
