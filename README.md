@@ -4,7 +4,13 @@
 
 1. Use or create a new .env file in ./docker directory.
 
-Put next variables:
+Important variables:
+- ENV - tag for containers, 'dev' / 'staging' / 'production'
+- AIRFLOW_UID
+- CLICKHOUSE_DB - database to use for clickhouse, 'gharchive' by default
+- CLICKHOUSE_USER - username for CH
+- CLICKHOUSE_PASSWORD - password for CH
+- JUPYTER_TOKEN - token to enter jupyter lab node
 
 2. Run Docker Compose
 
