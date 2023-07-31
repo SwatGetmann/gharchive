@@ -30,6 +30,9 @@ x-airflow-common:
     # WARNING: Use _PIP_ADDITIONAL_REQUIREMENTS option ONLY for a quick checks
     # for other purpose (development, test and especially production usage) build/extend Airflow image.
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
+    CLICKHOUSE_DB: ${CLICKHOUSE_DB}
+    CLICKHOUSE_USER: ${CLICKHOUSE_USER}
+    CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
   volumes:
     - ${AIRFLOW_PROJ_DIR:-..}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-..}/logs:/opt/airflow/logs
@@ -56,10 +59,10 @@ services:
       - "9000:9000"
     restart: always
     environment:
-      CLICKHOUSE_DB: gharchive
-      CLICKHOUSE_USER: altenar
       CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
-      CLICKHOUSE_PASSWORD: ${ENV_CLICKHOUSE_PASSWORD}
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
     volumes:
       - ../clickhouse/data:/var/lib/clickhouse/
       - ../clickhouse/logs:/var/lib/clickhouse-server/
@@ -78,7 +81,10 @@ services:
       - "4040-4080:4040-4080"
     environment:
       JUPYTER_ENABLE_LAB: "yes"
-      JUPYTER_TOKEN: "${ENV_TOKEN}"
+      JUPYTER_TOKEN: "${JUPYTER_TOKEN}"
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
     volumes:
       - ../notebooks:/home/jovyan/work/notebooks
       - ../spark/resources/data:/home/jovyan/work/data/
@@ -93,6 +99,10 @@ services:
     restart: always
     ports:
       - 8051:8050
+    environment:
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
 
   # Spark with 3 workers
   spark:
@@ -107,11 +117,14 @@ services:
     # networks:
     #     - default_net
     environment:
-        - SPARK_MODE=master
-        - SPARK_RPC_AUTHENTICATION_ENABLED=no
-        - SPARK_RPC_ENCRYPTION_ENABLED=no
-        - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-        - SPARK_SSL_ENABLED=no
+        CLICKHOUSE_DB: ${CLICKHOUSE_DB}
+        CLICKHOUSE_USER: ${CLICKHOUSE_USER}
+        CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+        SPARK_MODE: master
+        SPARK_RPC_AUTHENTICATION_ENABLED: no
+        SPARK_RPC_ENCRYPTION_ENABLED: no
+        SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED: no
+        SPARK_SSL_ENABLED: no
     volumes:
         - ../spark/app:/opt/spark/app # Spark scripts folder (Must be the same path in airflow and Spark Cluster)
         - ../spark/resources:/opt/spark/resources #Resources folder (Must be the same path in airflow and Spark Cluster)
@@ -131,14 +144,17 @@ services:
     # networks:
     #     - default_net
     environment:
-        - SPARK_MODE=worker
-        - SPARK_MASTER_URL=spark://spark:7077
-        - SPARK_WORKER_MEMORY=1G
-        - SPARK_WORKER_CORES=1
-        - SPARK_RPC_AUTHENTICATION_ENABLED=no
-        - SPARK_RPC_ENCRYPTION_ENABLED=no
-        - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-        - SPARK_SSL_ENABLED=no
+        CLICKHOUSE_DB: ${CLICKHOUSE_DB}
+        CLICKHOUSE_USER: ${CLICKHOUSE_USER}
+        CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+        SPARK_MODE: worker
+        SPARK_MASTER_URL: spark://spark:7077
+        SPARK_WORKER_MEMORY: 1G
+        SPARK_WORKER_CORES: 1
+        SPARK_RPC_AUTHENTICATION_ENABLED: no
+        SPARK_RPC_ENCRYPTION_ENABLED: no
+        SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED: no
+        SPARK_SSL_ENABLED: no
         # - PYSPARK_PYTHON=/usr/local/lib/python3.6 # Path to Python inside the Airflow container
         # - PYSPARK_DRIVER_PYTHON=/usr/local/lib/python3.6 # Path to Python inside the Airflow container
     volumes:
