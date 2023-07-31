@@ -82,6 +82,20 @@ services:
       - ../notebooks:/home/jovyan/work/notebooks
       - ../spark/resources/data:/home/jovyan/work/data/
       - ../spark/resources/jars:/home/jovyan/work/jars/
+  
+  dash:
+    build:
+      context: dash
+      dockerfile: Dockerfile
+    container_name: dash
+    image: dash:${ENV}
+    restart: always
+    ports:
+      - 8051:8050
+    # volumes:
+      # - ../notebooks:/home/jovyan/work/notebooks
+      # - ../spark/resources/data:/home/jovyan/work/data/
+      # - ../spark/resources/jars:/home/jovyan/work/jars/
 
   # Spark with 3 workers
   spark:

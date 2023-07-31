@@ -1,0 +1,5 @@
+pandas
+numpy
+clickhouse-connect==0.5.23
+plotly
+dash
