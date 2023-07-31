@@ -12,7 +12,16 @@ Important variables:
 - CLICKHOUSE_PASSWORD - password for CH
 - JUPYTER_TOKEN - token to enter jupyter lab node
 
-2. Run Docker Compose
+2. Add directories:
+- airflow_data
+- clickhouse/data
+- clickhouse/logs
+- config
+- data
+- logs
+- plugins
+
+3. Run Docker Compose
 
 > docker compose up -d
 
