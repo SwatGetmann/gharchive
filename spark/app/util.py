@@ -1,5 +1,6 @@
 import pyspark
 import clickhouse_connect
+import os
 
 def add_repo_columns(df):
     split_col = pyspark.sql.functions.split(df['repo.name'], '/')
@@ -22,8 +23,8 @@ def clickhouse_write(df, table_name):
     df.write \
         .format("jdbc") \
         .mode("append") \
-        .option("user", "altenar") \
-        .option("password", "altenar_ch_demo_517") \
+        .option("user", os.environ['CLICKHOUSE_USER']) \
+        .option("password", os.environ['CLICKHOUSE_PASSWORD']) \
         .option("driver", "com.github.housepower.jdbc.ClickHouseDriver") \
         .option("url", "jdbc:clickhouse://clickhouse-server:9000/gharchive") \
         .option("dbtable", "gharchive.{}".format(table_name)) \
@@ -32,8 +33,8 @@ def clickhouse_write(df, table_name):
 def create_clickhouse_table(create_table_cmd):
     client = clickhouse_connect.get_client(
         host='clickhouse-server', 
-        username='altenar', 
-        password='altenar_ch_demo_517'
+        username=os.environ['CLICKHOUSE_USER'], 
+        password=os.environ['CLICKHOUSE_PASSWORD']
     )
 
     print(create_table_cmd)

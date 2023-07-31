@@ -3,13 +3,14 @@ from datetime import datetime, timedelta
 import plotly.express as px
 import pandas as pd
 import clickhouse_connect
+import os
 
 def ch_stats(cmd):
     def ch_df(limit=0):
         client = clickhouse_connect.get_client(
             host='clickhouse_server', 
-            username='altenar', 
-            password='altenar_ch_demo_517'
+            username=os.environ['CLICKHOUSE_USER'], 
+            password=os.environ['CLICKHOUSE_PASSWORD']
         )
         if limit > 0:
             df = client.query_df(query=cmd + " LIMIT {}".format(limit))
