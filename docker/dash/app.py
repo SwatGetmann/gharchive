@@ -41,8 +41,6 @@ def ch_stats(cmd):
             df = client.query_df(query=cmd + " LIMIT {}".format(limit))
         else:
             df = client.query_df(query=cmd)
-            # cmd = cmd + " LIMIT {}".format(limit)
-        # print(cmd)
         
         client.close()
         return df
@@ -315,8 +313,6 @@ def update_members_df(n):
                 ]),
             ])
         ]
-
-# app.run_server(mode='inline', host="0.0.0.0", port=8050, dev_tools_ui=True, debug=True)
     
 if __name__ == '__main__':
     app.run(
