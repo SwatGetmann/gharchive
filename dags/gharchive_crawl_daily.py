@@ -11,7 +11,7 @@ import requests
 
 #### DAGs & Tasks
 
-start_date = datetime(2023, 7, 20)
+start_date = datetime(2023, 7, 26)
 
 default_args = {
     "owner": "airflow",
@@ -39,8 +39,8 @@ with DAG(
     # schedule_interval=timedelta(hours=1),
     schedule="@daily",
     # catchup=True,
-    catchup=False,
-    concurrency=4,
+    catchup=True,
+    concurrency=12,
     max_active_runs=1,
     params={
         "start_date": Param(
