@@ -5,7 +5,7 @@ from airflow.decorators import task
 
 from datetime import datetime, timedelta
 import pathlib
-
+import os, sys
 
 #### DAGs & Tasks
 
@@ -93,7 +93,7 @@ with DAG(
         cur_path = next(paths, None)
         while cur_path is not None:
             print(cur_path)
-            pathlib.unlink(cur_path)
+            pathlib.Path(cur_path).unlink()
             cur_path = next(paths, None)
         # return date.strftime("%F")
 
