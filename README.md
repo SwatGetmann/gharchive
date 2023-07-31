@@ -21,6 +21,10 @@ Important variables:
 - logs
 - plugins
 
+OR
+
+> mkdir airflow_data clickhouse clickhouse/data clickhouse/logs config data logs plugins
+
 3. Run Docker Compose
 
 > docker compose up -d
